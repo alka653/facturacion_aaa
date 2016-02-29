@@ -1,0 +1,158 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+	{% include 'elements/menu.html' %}
+	<div class="container">
+		<div class="row">
+			<div class="page-header">
+				<div class="row">
+					<h1>
+						Agrega elementos a la factura
+						<a href="{% url 'product' %}" class="btn btn-success open-modal" data-toggle="modal" data-target="#Modal">Nuevo producto</a>
+					</h1>
+				</div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-12">
+				<div class="form-group">
+					<label class="control-label">Buscar producto</label>
+					<input type="text" class="form-control" id="find-product" name="find-product">
+				</div>
+			</div>
+			<div class="col-md-12">
+				<table class="table table-striped table-hover">
+					<thead>
+						<tr>
+							<th>Nombre</th>
+							<th>Cantidad</th>
+							<th>Precio unitario</th>
+							<th>Precio total</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+				<div class="text-center">
+					<a href="#" class="btn btn-success print">Imprimir Factura</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade" id="Modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"></div>
+{% endblock content %}
+
+{% block content_script %}
+	$(document).on("click", ".open-modal", function(e){
+		e.preventDefault();
+		$('#Modal').load($(this).attr('href'),function(){
+			$('#Modal').modal({
+				show:true
+			});
+		});
+	});
+	var format = function(num){
+		var str = num.toString().replace("$", ""), parts = false, output = [], i = 1, formatted = null;
+		if(str.indexOf(".") > 0) {
+			parts = str.split(".");
+			str = parts[0];
+		}
+		str = str.split("").reverse();
+		for(var j = 0, len = str.length; j < len; j++) {
+			if(str[j] != ",") {
+				output.push(str[j]);
+				if(i%3 == 0 && j < (len - 1)) {
+					output.push(",");
+				}
+				i++;
+			}
+		}
+		formatted = output.reverse().join("");
+		return("$ " + formatted + ((parts) ? "." + parts[1].substr(0, 2) : ""));
+	};
+	$('html').on('click', '.print', function(event){
+		event.preventDefault();
+		var data_product = {}
+		$('table tbody tr').each(function(i, el) {
+			pk = $(el).attr('val');
+			data_product[pk] = $('.quant-'+pk).val();
+		});
+		console.log(data_product);
+		$.ajax({
+			url: "{% url 'factura' %}",
+			type: "POST",
+			dataType: "json",
+			data: data_product,
+			success: function(data){
+				if(data.response == true){
+					window.open("/factura-print/"+data.message);
+				}else{
+					alert(data.message);
+				}
+			}
+		});
+	});
+	$('table').on('click', '.plus', function(event){
+		event.preventDefault();
+		pk = $(this).attr('val');
+		sum = parseInt($('.quant-'+pk).val()) + 1;
+		put_value(pk, sum);
+	});
+	$('table').on('click', '.minus', function(event){
+		event.preventDefault();
+		pk = $(this).attr('val');
+		sum = parseInt($('.quant-'+pk).val()) - 1;
+		if(sum == 0){
+			alert("Valor mínimo debe ser 1");
+		}else{
+			put_value(pk, sum);
+		}
+	});
+	$('table').on('click', '.remove', function(event){
+		event.preventDefault();
+		pk = $(this).attr('val');
+		$('.product-'+pk).remove();
+	});
+	function put_value(pk, sum){
+		$('.quant-'+pk).val(sum);
+		price = parseInt($('.price-tot-'+pk).attr('val')) * sum;
+		$('.price-tot-'+pk).empty();
+		$('.price-tot-'+pk).html(format(price));
+	}
+	function add_element(pk, name, price){
+		$('.table tbody').append(
+			'<tr class="product-'+pk+'" val="'+pk+'">'+
+				'<td>'+name+'</td>'+
+				'<td>'+
+					'<a href="#" class="btn btn-default minus" val="'+pk+'">'+
+						'<i class="glyphicon glyphicon-minus"></i>'+
+					'</a>'+
+					'<input type="text" class="form-control quant-'+pk+'" style="width: 50px; display: inline;" value="1">'+
+					'<a href="#" class="btn btn-default plus" val="'+pk+'">'+
+						'<i class="glyphicon glyphicon-plus"></i>'+
+					'</a>'+
+				'</td>'+
+				'<td>'+format(price)+'</td>'+
+				'<td class="price-tot-'+pk+'" val="'+price+'">'+format(price)+'</td>'+
+				'<td>'+
+					'<a href="#" class="btn btn-danger remove" val="'+pk+'">'+
+						'<i class="glyphicon glyphicon-remove"></i>'+
+					'</a>'+
+				'</td>'+
+			'</tr>'
+		);
+	}
+	$("#find-product").autocomplete({
+		minLength: 1,
+		source: "{% url 'find_product' %}",
+		select: function(event, ui){
+			if($('.product-'+ui.item.pk).length){
+				alert("Articulo ya agregado")
+			}else{
+				add_element(ui.item.pk, ui.item.name, ui.item.price);
+			}
+			$(this).val('');
+			return false;
+		}
+	});
+{% endblock content_script %}

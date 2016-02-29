@@ -1,0 +1,92 @@
+{% load humanize %}
+
+{% load custom_filters %}
+
+<html>
+	<head>
+		<title>{{ title }}</title>
+		<style type="text/css">
+			@page {
+				size: 8cm x {% height query.detallefactura_set.all.count %}cm;
+				margin: 0.5cm;
+				@frame footer {
+					-pdf-frame-content: footerContent;
+					bottom: 0cm;
+					height: 1cm;
+				}
+			}
+			body {
+				text-align: center;
+				font-size: 10.5px;
+				font-family: 'Courier Bold';
+			}
+			table {
+				border-collapse: collapse;
+			}
+			td, th {
+				padding: 1px 0px;
+			}
+		</style>
+	</head>
+	<body>
+		<table>
+			<thead>
+				<tr>
+					<th>VARIEDADES ABNEL</th>
+				</tr>
+				<tr>
+					<th>NIT: 39575578-1</th>
+				</tr>
+				<tr>
+					<th>EMAIL: VARIEDADESAAA@GMAIL.COM</th>
+				</tr>
+				<tr>
+					<th>Mz B. C# 34 B/SOLARIS.</th>
+				</tr>
+				<tr>
+					<th>GIRARDOT - CUNDINAMARCA</th>
+				</tr>
+				<tr>
+					<th>TIQUETE DE VENTA No. {{ title }}</th>
+				</tr>
+				<tr>
+					<th>FECHA: {{ query.date }}</th>
+				</tr>
+				<tr>
+					<th>REGIMEN SIMPLIFICADO</th>
+				</tr>
+			</thead>
+		</table>
+		<table>
+			<tbody>
+				<tr>
+					<td colspan="4">-----------------------------------------------------------------------------</td>
+				</tr>
+				<tr style="text-align:center">
+					<td style="width: 200px">DESCRIPCION</td>
+					<td style="width: 80px">CANT.</td>
+					<td>VR. UNITARIO</td>
+					<td>VR. TOTAL</td>
+				</tr>
+				<tr>
+					<td colspan="4">-----------------------------------------------------------------------------</td>
+				</tr>
+				{% for detalle in query.detallefactura_set.all %}
+					<tr style="text-align:center">
+						<td style="text-align:left">{{ detalle.producto.name }}</td>
+						<td>{{ detalle.cantidad }}</td>
+						<td>$ {{ detalle.producto.price|floatformat|intcomma }}</td>
+						<td>$ {% multiply detalle.cantidad detalle.producto.price %}</td>
+					</tr>
+				{% endfor %}
+				<tr>
+					<td colspan="4">-----------------------------------------------------------------------------</td>
+				</tr>
+				<tr>
+					<th colspan="3">TOTAL</th>
+					<th>$ {% multiply_tot query.code %}</th>
+				</tr>
+			</tbody>
+		</table>
+	</body>
+</html>
