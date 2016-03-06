@@ -10,9 +10,9 @@
 		</div>
 		<div class="navbar-collapse collapse" id="navbar-main">
 			<ul class="nav navbar-nav navbar-right">
-				<li>
-					<a href="#">Inicio</a>
-				</li>
+				<li><a href="{% url 'home' %}">Inicio</a></li>
+				<li><a href="{% url 'list_product' %}">Productos</a></li>
+				<li><a href="{% url 'list_factura' %}">Facturas</a></li>
 			</ul>
 		</div>
 	</div>

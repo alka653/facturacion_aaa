@@ -1,0 +1,80 @@
+{% extends 'layout/base.html' %}
+
+{% load static %}
+
+{% block content_head %}
+	<link rel="stylesheet" href="{% static 'css/jquery.dataTables.min.css' %}">
+	<script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+{% endblock content_head %}
+
+{% block content %}
+	{% include 'elements/menu.html' %}
+	<div class="container">
+		<div class="row">
+			<div class="page-header">
+				<div class="row">
+					<h1>
+						{{ title }}
+					</h1>
+				</div>
+			</div>
+		</div>
+		<div class="row">
+			<table id="list-factura" class="table table-striped table-bordered">
+				<thead>
+					<tr>
+						<th>Código</th>
+						<th>Fecha</th>
+						<th>Acción</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for factura in facturas %}
+					<tr class="factura-{{ factura.pk }}">
+						<td>{{ factura.code }}</td>
+						<td>{{ factura.date }}</td>
+						<td>
+							<a href="{% url 'delete_factura' factura.pk %}" class="delete btn btn-danger" id="{{ factura.pk }}">Eliminar</a>
+							<a href="{% url 'detail_factura' factura.pk %}" class="btn btn-primary open-modal" data-toggle="modal" data-target="#Modal">Detalle</a>
+							<a href="{% url 'pdf_factura' factura.pk %}" target='_blank' class='btn btn-success text-center'>Imprimir</a>
+						</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+{% endblock content %}
+
+{% block content_script %}
+	$(document).on("click", ".delete", function(e){
+		var id = $(this).attr('id');
+		var url = $(this).attr('href');
+		Lobibox.alert('info', {
+			title: "Información",
+			msg: "¿Desea eliminar la factura?",
+			buttons:{
+				yes: {
+					'class': 'btn btn-warning'
+				},
+				no: {
+					'class': 'btn btn-primary'
+				}
+			},
+			callback: function(lobibox, type){
+				if(type == 'yes'){
+					$.get(url, function(response){
+						send_alert(response.type, response.msg);
+					}).done(function(){
+						$('.factura-'+id).remove();
+					});
+				}
+				else{
+					send_alert('success', 'Cancelado por el usuario');
+				}
+			}
+		});
+		return false;
+	});
+	$('#list-factura').DataTable();
+{% endblock content_script %}

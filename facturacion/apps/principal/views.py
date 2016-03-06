@@ -1,22 +1,27 @@
+# -*- coding: utf-8 -*-
 from django.http import HttpResponseRedirect, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from easy_pdf.views import PDFTemplateView
 from django.shortcuts import render
 from .models import *
-from .forms import *
 import datetime, json
+from .forms import *
 
 def home(request):
 	return render(request, 'home.html', {'title': 'Bienvenido'})
 
+def list_product(request):
+	products = Producto.objects.all()
+	return render(request, 'list_product.html', {'title': 'Lista de Productos', 'products': products})
+
 def find_product(request):
+	results = []
+	response = {}
 	if request.is_ajax:
 		word = request.GET.get('term','')
-		results = []
 		products = Producto.objects.filter(name__icontains = word)
 		if products:
 			for product in products:
-				response = {}
 				response['pk'] = product.pk
 				response['name'] = product.name
 				response['label'] = product.name
@@ -31,25 +36,44 @@ def find_product(request):
 	mimetype = "application/json"
 	return HttpResponse(data_json, mimetype)
 
-def product(request, product_pk = 0):
+def add_product(request, product_pk):
+	response = {}
+	response['edit'] = request.GET.get('new')
 	try:
 		producto = Producto.objects.get(pk = product_pk)
+		product = producto.pk
+		response['edit'] = 'true'
 	except Producto.DoesNotExist:
 		producto = product_pk
+		product = producto
 	if request.method == 'POST':
-		response = {}
 		form = ProductForm(request.POST, instance = producto)
 		if form.is_valid():
 			product_data = form.save()
 			response['pk'] = product_data.pk
 			response['name'] = product_data.name
 			response['price'] = str(product_data.price)
+			response['type'] = "success"
+			response['response'] = "Operacion realizada con exito"
 		else:
 			response['response'] = "Ha ocurrido un error"
+			response['type'] = "error"
 		return HttpResponse(json.dumps(response), content_type = 'application/json')
 	else:
 		form = ProductForm(instance = producto)
-	return render(request, 'form-producto.html', {'title': 'Nuevo Producto', 'product_val': producto, 'forms': form})
+	return render(request, 'form-producto.html', {'title': 'Nuevo Producto', 'product_val': product, 'new': request.GET.get('new'),'forms': form})
+
+def delete_product(request, product_pk):
+	response = {}
+	try:
+		producto = Producto.objects.get(pk = product_pk)
+		producto.delete()
+		response['type'] = 'success'
+		response['msg'] = 'Producto eliminado'
+	except Producto.DoesNotExist:
+		response['type'] = 'error'
+		response['msg'] = 'Producto no encontrado'
+	return HttpResponse(json.dumps(response), "application/json")
 
 @csrf_exempt
 def factura(request):
@@ -70,6 +94,26 @@ def factura(request):
 	else:
 		response['response'] = False
 		response['message'] = 'Ha ocurrido un error'
+	return HttpResponse(json.dumps(response), "application/json")
+
+def list_factura(request):
+	facturas = Factura.objects.all()
+	return render(request, 'list_factura.html', {'title': 'Lista de Facturas', 'facturas': facturas})
+
+def detail_factura(request, factura_pk):
+	factura = Factura.objects.get(pk = factura_pk)
+	return render(request, 'detail-factura.html', {'title': 'Detalle de '+factura.code, 'factura': factura})
+
+def delete_factura(request, factura_pk):
+	response = {}
+	try:
+		factura = Factura.objects.get(pk = factura_pk)
+		factura.delete()
+		response['type'] = 'success'
+		response['msg'] = 'Factura eliminada'
+	except Factura.DoesNotExist:
+		response['type'] = 'error'
+		response['msg'] = 'Factura no encontrada'
 	return HttpResponse(json.dumps(response), "application/json")
 
 class FacturaPDFView(PDFTemplateView):

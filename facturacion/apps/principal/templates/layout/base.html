@@ -6,13 +6,17 @@
 	<title>Facturación :: {{ title }}</title>
 	<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
 	<link rel="stylesheet" href="{% static 'css/jquery-ui.min.css' %}">
+	<link rel="stylesheet" href="{% static 'css/lobibox.css' %}">
 	<script src="{% static 'js/jquery.js' %}"></script>
 	<script src="{% static 'js/bootstrap.min.js' %}"></script>
+	<script src="{% static 'js/standard.js' %}"></script>
 	<script src="{% static 'js/jquery-ui.min.js' %}"></script>
+	<script src="{% static 'js/lobibox.js' %}"></script>
 	{% block content_head %}{% endblock content_head %}
 </head>
 <body>
 	{% block content %}{% endblock content %}
+	<div class="modal fade" id="Modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"></div>
 	<script>
 		{% block content_script %}
 		{% endblock content_script %}

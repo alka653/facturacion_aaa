@@ -1,0 +1,82 @@
+{% extends 'layout/base.html' %}
+
+{% load static %}
+
+{% load humanize %}
+
+{% block content_head %}
+	<link rel="stylesheet" href="{% static 'css/jquery.dataTables.min.css' %}">
+	<script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+{% endblock content_head %}
+
+{% block content %}
+	{% include 'elements/menu.html' %}
+	<div class="container">
+		<div class="row">
+			<div class="page-header">
+				<div class="row">
+					<h1>
+						{{ title }}
+						<a href="{% url 'add_product' %}?new=true" class="btn btn-success open-modal" data-toggle="modal" data-target="#Modal">Nuevo producto</a>
+					</h1>
+				</div>
+			</div>
+		</div>
+		<div class="row">
+			<table id="list-product" class="table table-striped table-bordered">
+				<thead>
+					<tr>
+						<th>Nombre</th>
+						<th>Precio</th>
+						<th>Acción</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for product in products %}
+					<tr class="product-{{ product.pk }}">
+						<td>{{ product.name }}</td>
+						<td>$ {{ product.price|floatformat|intcomma }}</td>
+						<td>
+							<a href="{% url 'delete_product' product.pk %}" class="delete btn btn-danger" id="{{ product.pk }}">Eliminar</a>
+							<a href="{% url 'add_product' product.pk %}" class="open-modal btn btn-success" data-toggle="modal" data-target="#Modal">Editar</a>
+						</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+{% endblock content %}
+
+{% block content_script %}
+	$(document).on("click", ".delete", function(e){
+		var id = $(this).attr('id');
+		var url = $(this).attr('href');
+		Lobibox.alert('info', {
+			title: "Información",
+			msg: "¿Desea eliminar el producto?. Se eliminará también todas las facturas realizadas con el producto a eliminar",
+			buttons:{
+				yes: {
+					'class': 'btn btn-warning'
+				},
+				no: {
+					'class': 'btn btn-primary'
+				}
+			},
+			callback: function(lobibox, type){
+				if(type == 'yes'){
+					$.get(url, function(response){
+						send_alert(response.type, response.msg);
+					}).done(function(){
+						$('.product-'+id).remove();
+					});
+				}
+				else{
+					send_alert('success', 'Cancelado por el usuario');
+				}
+			}
+		});
+		return false;
+	});
+	$('#list-product').DataTable();
+{% endblock content_script %}

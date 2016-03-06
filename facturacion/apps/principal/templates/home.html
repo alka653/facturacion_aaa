@@ -8,7 +8,7 @@
 				<div class="row">
 					<h1>
 						Agrega elementos a la factura
-						<a href="{% url 'product' %}" class="btn btn-success open-modal" data-toggle="modal" data-target="#Modal">Nuevo producto</a>
+						<a href="{% url 'add_product' %}" class="btn btn-success open-modal" data-toggle="modal" data-target="#Modal">Nuevo producto</a>
 					</h1>
 				</div>
 			</div>
@@ -39,37 +39,9 @@
 			</div>
 		</div>
 	</div>
-	<div class="modal fade" id="Modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"></div>
 {% endblock content %}
 
 {% block content_script %}
-	$(document).on("click", ".open-modal", function(e){
-		e.preventDefault();
-		$('#Modal').load($(this).attr('href'),function(){
-			$('#Modal').modal({
-				show:true
-			});
-		});
-	});
-	var format = function(num){
-		var str = num.toString().replace("$", ""), parts = false, output = [], i = 1, formatted = null;
-		if(str.indexOf(".") > 0) {
-			parts = str.split(".");
-			str = parts[0];
-		}
-		str = str.split("").reverse();
-		for(var j = 0, len = str.length; j < len; j++) {
-			if(str[j] != ",") {
-				output.push(str[j]);
-				if(i%3 == 0 && j < (len - 1)) {
-					output.push(",");
-				}
-				i++;
-			}
-		}
-		formatted = output.reverse().join("");
-		return("$ " + formatted + ((parts) ? "." + parts[1].substr(0, 2) : ""));
-	};
 	$('html').on('click', '.print', function(event){
 		event.preventDefault();
 		var data_product = {}
@@ -77,20 +49,29 @@
 			pk = $(el).attr('val');
 			data_product[pk] = $('.quant-'+pk).val();
 		});
-		console.log(data_product);
-		$.ajax({
-			url: "{% url 'factura' %}",
-			type: "POST",
-			dataType: "json",
-			data: data_product,
-			success: function(data){
-				if(data.response == true){
-					window.open("/factura-print/"+data.message);
-				}else{
-					alert(data.message);
+		if(Object.keys(data_product) == 0){
+			send_alert('error', 'No hay productos');
+		}else{
+			$.ajax({
+				url: "{% url 'factura' %}",
+				type: "POST",
+				dataType: "json",
+				data: data_product,
+				success: function(data){
+					if(data.response == true){
+						Lobibox.window({
+							title: "Factura No. "+data.message,
+							height: 110,
+							baseClass: 'animated-super-fast text-center',
+							content: "<a href='/factura-print/"+data.message+"' target='_blank' class='btn btn-success text-center'>Imprimir</a>"
+						});
+						$("tbody").empty();
+					}else{
+						alert(data.message);
+					}
 				}
-			}
-		});
+			});
+		}
 	});
 	$('table').on('click', '.plus', function(event){
 		event.preventDefault();
@@ -147,7 +128,7 @@
 		source: "{% url 'find_product' %}",
 		select: function(event, ui){
 			if($('.product-'+ui.item.pk).length){
-				alert("Articulo ya agregado")
+				send_alert('info', 'Articulo ya agregado');
 			}else{
 				add_element(ui.item.pk, ui.item.name, ui.item.price);
 			}

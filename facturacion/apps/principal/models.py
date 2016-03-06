@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.db import models
 
 class Producto(models.Model):
@@ -5,6 +6,9 @@ class Producto(models.Model):
 	price = models. DecimalField(max_digits = 11, decimal_places = 2)
 
 	def __str__(self):
+		return self.name
+
+	def __unicode__(self):
 		return self.name
 
 class Factura(models.Model):
